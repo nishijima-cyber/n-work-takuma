@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N-WORK SYSTEM 琢磨興業 v3</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="top-bar">
+    <div class="brand">
+      <h1>N-WORK SYSTEM</h1>
+      <small>琢磨興業 v3</small>
+    </div>
+    <div class="top-actions">
+      <button type="button" id="toggleForm">＋ 新規物件</button>
+      <button type="button" id="toggleHolidayForm">🟠 休み登録</button>
+      <button type="button" id="tomorrowScheduleBtn">予定表</button>
+      <button type="button" id="lineShareBtn">LINE転送</button>
+      <button type="button" id="printBtn">印刷</button>
+      <button type="button" id="helpBtn">❓ 使い方</button>
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="元請 / 工程 / 現場 / 場所..." />
+    </div>
+    <!-- 👤 ログインユーザー表示 -->
+    <div class="user-chip hidden" id="userChip">
+      <span class="user-chip-icon">👤</span>
+      <span id="userChipName"></span>
+      <div class="user-menu hidden" id="userMenu">
+        <button type="button" id="changePinBtn">🔑 PIN変更</button>
+        <button type="button" id="logoutBtn">ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 休み登録パネル -->
+  <section class="control-panel hidden" id="holidayFormPanel">
+    <div class="panel-card holiday-reg-panel">
+      <div class="panel-header">
+        <div><h2>休み登録</h2><p>メンバーの休み予定をカレンダーに表示します。</p></div>
+      </div>
+      <div class="holiday-reg-form">
+        <label class="hrf-label">
+          <span>日付</span>
+          <div class="date-picker-wrap">
+            <button type="button" class="date-picker-btn hrf-date-btn" id="holDatePickerBtn" aria-haspopup="true" aria-expanded="false">
+              <span class="dp-btn-icon">📅</span>
+              <span id="holDatePickerValue">日付を選択</span>
+            </button>
+            <div class="date-picker-popup hidden" id="holDatePickerPopup">
+              <div class="dp-header hol-dp-header">
+                <button type="button" class="dp-nav" id="holDpPrev">◀</button>
+                <span id="holDpMonthLabel"></span>
+                <button type="button" class="dp-nav" id="holDpNext">▶</button>
+              </div>
+              <div class="dp-weekdays">
+                <div>日</div><div>月</div><div>火</div><div>水</div>
+                <div>木</div><div>金</div><div>土</div>
+              </div>
+              <div class="dp-grid" id="holDpGrid"></div>
+            </div>
+          </div>
+          <input type="hidden" id="holRegDate">
+        </label>
+        <label class="hrf-label">
+          <span>メンバー</span>
+          <select id="holRegMember" class="hrf-select">
+            <option value="">（メンバー未登録）</option>
+          </select>
+        </label>
+        <label class="hrf-label">
+          <span>種別</span>
+          <select id="holRegType" class="hrf-select">
+            <option value="休み">休み</option>
+            <option value="有給">有給</option>
+            <option value="午前休">午前休</option>
+            <option value="午後休">午後休</option>
+            <option value="私用">私用</option>
+          </select>
+        </label>
+        <label class="hrf-label hrf-memo">
+          <span>メモ</span>
+          <input type="text" id="holRegMemo" class="hrf-input" placeholder="任意" maxlength="40">
+        </label>
+        <div class="hrf-actions">
+          <button type="button" id="holRegSubmit" class="submit-btn">登録する</button>
+          <button type="button" id="holRegCancel" class="cancel-btn">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="control-panel hidden" id="newJobPanel">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div>
+          <h2 id="formTitle">新規物件追加フォーム</h2>
+          <p>登録すると該当日付にカードを追加します。</p>
+        </div>
+      </div>
+
+      <form id="jobForm">
+        <input type="hidden" id="editJobId" value="">
+        <div class="grid-form">
+          <label class="date-picker-label">
+            <span>日付</span>
+            <div class="date-picker-wrap">
+              <button type="button" class="date-picker-btn" id="jobDatePickerBtn" aria-haspopup="true" aria-expanded="false">
+                <span class="dp-btn-icon">📅</span>
+                <span id="jobDatePickerValue">1日</span>
+              </button>
+              <div class="date-picker-popup hidden" id="jobDatePickerPopup">
+                <div class="dp-header">
+                  <span id="dpMonthLabel"></span>
+                </div>
+                <div class="dp-weekdays">
+                  <div>日</div><div>月</div><div>火</div><div>水</div>
+                  <div>木</div><div>金</div><div>土</div>
+                </div>
+                <div class="dp-grid" id="dpGrid"></div>
+              </div>
+            </div>
+            <select id="jobDate" name="date" required hidden></select>
+          </label>
+          <label>
+            <span>元請</span>
+            <input id="jobClient" name="client" type="text" placeholder="例: 積和建設" required>
+          </label>
+          <label>
+            <span>工程</span>
+            <input id="jobProcess" name="process" type="text" placeholder="例: 架 / 内部架 / 払 / CAP / 常用" required>
+          </label>
+          <label>
+            <span>現場名</span>
+            <input id="jobSite" name="site" type="text" placeholder="例: ○○マンション" required>
+          </label>
+          <label>
+            <span>場所・住所</span>
+            <input id="jobPlace" name="place" type="text" placeholder="例: 名古屋市中区○○町1-1" required>
+          </label>
+          <label class="memo-label">
+            <span>メモ</span>
+            <textarea id="jobMemo" name="memo" placeholder="例: ⚠ 駐車場なし・要確認" rows="2"></textarea>
+          </label>
+        </div>
+
+        <!-- ファイル添付 -->
+        <div class="attach-section">
+          <div class="attach-row">
+            <button type="button" class="attach-btn" id="attachPhotoBtn">📷 写真追加</button>
+            <input type="file" id="attachPhotoInput" accept="image/*" multiple hidden>
+            <div class="attach-drop" id="attachPhotoDrop">
+              <div class="attach-chips" id="attachPhotoChips"></div>
+              <span class="attach-drop-hint">ここにドロップ</span>
+            </div>
+          </div>
+          <div class="attach-row">
+            <button type="button" class="attach-btn" id="attachDrawingBtn">📐 図面追加</button>
+            <input type="file" id="attachDrawingInput" accept="image/*,.pdf,application/pdf" hidden>
+            <div class="attach-drop" id="attachDrawingDrop">
+              <div class="attach-chips" id="attachDrawingChips"></div>
+              <span class="attach-drop-hint">ここにドロップ</span>
+            </div>
+          </div>
+          <div class="attach-row">
+            <button type="button" class="attach-btn" id="attachInstrBtn">📄 指示書追加</button>
+            <input type="file" id="attachInstrInput" accept="image/*,.pdf,application/pdf" hidden>
+            <div class="attach-drop" id="attachInstrDrop">
+              <div class="attach-chips" id="attachInstrChips"></div>
+              <span class="attach-drop-hint">ここにドロップ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="submit-btn" id="formSubmitBtn">登録して追加</button>
+          <button type="button" class="cancel-btn" id="cancelForm">キャンセル</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <main class="calendar-area">
+    <div class="dashboard-panel">
+      <div class="dashboard-stat dashboard-today">
+        <span class="stat-dot"></span>
+        <div class="stat-info">
+          <div class="stat-value" id="statToday">—</div>
+          <div class="stat-label">本日工程</div>
+        </div>
+      </div>
+      <div class="dashboard-stat dashboard-unassigned">
+        <span class="stat-dot"></span>
+        <div class="stat-info">
+          <div class="stat-value" id="statUnassigned">—</div>
+          <div class="stat-label">今月件数</div>
+        </div>
+      </div>
+      <div class="dashboard-stat dashboard-vehicle">
+        <span class="stat-dot"></span>
+        <div class="stat-info">
+          <div class="stat-value" id="statVehicle">—</div>
+          <div class="stat-label">今週件数</div>
+        </div>
+      </div>
+      <div class="dashboard-stat dashboard-alert">
+        <span class="stat-dot"></span>
+        <div class="stat-info">
+          <div class="stat-value" id="statAlert">—</div>
+          <div class="stat-label">⚠ メモあり</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="month-panel">
+      <button type="button" class="month-btn-prev" id="prevMonth">◀</button>
+      <div class="month-label" id="currentMonthLabel">2026年5月</div>
+      <button type="button" class="month-btn-next" id="nextMonth">▶</button>
+      <button type="button" class="month-btn-today" id="todayBtn">本日</button>
+    </div>
+    <div class="process-panel" id="processPanel"></div>
+
+    <div class="calendar-grid-wrapper">
+      <div class="calendar-header">
+        <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- コンテキストメニュー -->
+<div class="ctx-menu hidden" id="ctxMenu">
+  <button type="button" class="ctx-item" id="ctxCopy">📋 コピー</button>
+  <button type="button" class="ctx-item" id="ctxEdit">✏ 編集</button>
+  <button type="button" class="ctx-item ctx-danger" id="ctxDelete">🗑 削除</button>
+</div>
+
+<!-- 現場詳細モーダル -->
+<div class="modal" id="jobModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalTitle">現場詳細</h2>
+        <p id="modalSubtitle" class="modal-subtitle"></p>
+      </div>
+      <button id="closeModal" aria-label="閉じる">✕</button>
+    </div>
+
+    <div class="modal-grid">
+      <div class="modal-item">
+        <dt>元請</dt>
+        <dd id="modalClient"></dd>
+      </div>
+      <div class="modal-item">
+        <dt>工程</dt>
+        <dd id="modalProcess"></dd>
+      </div>
+      <div class="modal-item">
+        <dt>現場名</dt>
+        <dd id="modalSite"></dd>
+      </div>
+      <div class="modal-item">
+        <dt>場所</dt>
+        <dd id="modalPlace"></dd>
+      </div>
+      <div class="modal-item wide" id="modalMemoRow">
+        <dt>メモ</dt>
+        <dd id="modalMemo"></dd>
+      </div>
+    </div>
+
+    <div class="modal-files" id="modalFiles"></div>
+  </div>
+</div>
+
+<!-- ライトボックス -->
+<div class="lightbox hidden" id="lightbox">
+  <div class="lightbox-inner">
+    <img id="lightboxImg" src="" alt="">
+    <div id="lightboxCaption" class="lightbox-caption"></div>
+    <button class="lightbox-close" id="lightboxClose">✕</button>
+  </div>
+</div>
+
+<!-- 予定表モーダル（工程表 × 司令室） -->
+<div class="modal" id="tomorrowModal">
+  <div class="modal-box schedule-fullbox">
+
+    <!-- 左：工程表 -->
+    <div class="schedule-left">
+      <div class="modal-header schedule-header">
+        <h2>予定表</h2>
+        <div class="schedule-date-wrap">
+          <input type="date" id="scheduleDateInput" aria-label="日付を選択">
+        </div>
+        <button id="closeTomorrowModal" aria-label="閉じる">✕</button>
+      </div>
+      <p id="tomorrowDateLabel" class="schedule-day-label"></p>
+      <div id="tomorrowJobList" class="tomorrow-job-list"></div>
+      <div class="tomorrow-footer">
+        <button type="button" id="lineShareImgBtn" class="tomorrow-btn">📱 LINE共有</button>
+        <button type="button" id="savePdfBtn" class="tomorrow-btn">📄 PDF保存</button>
+        <button type="button" id="printTomorrowBtn" class="tomorrow-btn tomorrow-btn--accent">🖨 印刷</button>
+      </div>
+    </div>
+
+    <!-- 右：司令室 -->
+    <div class="cmd-sidebar" id="cmdSidebar">
+      <div class="cmd-tabs" id="cmdTabs">
+        <button class="cmd-tab active" data-tab="members">👷 メンバー</button>
+        <button class="cmd-tab" data-tab="vehicles">🚛 車両</button>
+        <button class="cmd-tab" data-tab="holidays">🟠 休み</button>
+      </div>
+      <div class="cmd-tab-body" id="cmdTabBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ヘルプモーダル -->
+<div class="modal" id="helpModal">
+  <div class="modal-box help-box">
+    <div class="modal-header help-modal-header">
+      <h2>❓ 使い方ガイド</h2>
+      <button id="closeHelpModal" aria-label="閉じる">✕</button>
+    </div>
+    <div class="help-body">
+      <nav class="help-nav" id="helpNav"></nav>
+      <div class="help-content" id="helpContent"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- ログインオーバーレイ -->
+<div id="loginOverlay" class="login-overlay" style="display:none">
+  <div class="login-box">
+
+    <!-- 社名アニメーション -->
+    <div class="tk-logo-wrap">
+      <div class="tk-logo-text">
+        <span class="tk-c" style="--i:0">琢</span><span class="tk-c" style="--i:1">磨</span><span class="tk-c" style="--i:2">興</span><span class="tk-c" style="--i:3">業</span>
+      </div>
+      <div class="tk-logo-line"></div>
+    </div>
+    <div class="login-logo-divider"></div>
+    <div class="login-system-name">N · W O R K &nbsp; S Y S T E M</div>
+
+    <!-- ガラスカード -->
+    <div class="login-glass-card">
+
+      <!-- Step1：名前選択 -->
+      <div id="loginStep1" class="login-step">
+        <p class="login-hint">ユーザーを選択</p>
+        <div id="loginNameGrid" class="login-name-grid"></div>
+      </div>
+
+      <!-- Step2：PIN入力 -->
+      <div id="loginStep2" class="login-step" style="display:none">
+        <div class="login-who" id="loginSelectedName"></div>
+        <div class="login-who-bar"></div>
+        <p class="login-pin-label" id="loginPinLabel">PIN を入力</p>
+        <div class="login-pin-row">
+          <span class="pin-dot" id="pinDot0"></span>
+          <span class="pin-dot" id="pinDot1"></span>
+          <span class="pin-dot" id="pinDot2"></span>
+          <span class="pin-dot" id="pinDot3"></span>
+        </div>
+        <div class="login-msg" id="loginMsg"></div>
+        <div class="login-keypad" id="loginKeypad">
+          <button data-key="1">1</button>
+          <button data-key="2">2</button>
+          <button data-key="3">3</button>
+          <button data-key="4">4</button>
+          <button data-key="5">5</button>
+          <button data-key="6">6</button>
+          <button data-key="7">7</button>
+          <button data-key="8">8</button>
+          <button data-key="9">9</button>
+          <button data-key="back" class="key-fn">⌫</button>
+          <button data-key="0">0</button>
+          <button data-key="C" class="key-fn">C</button>
+        </div>
+        <button type="button" id="loginBack" class="login-back">— 戻 る —</button>
+      </div>
+
+    </div><!-- /login-glass-card -->
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
