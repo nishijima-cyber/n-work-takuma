@@ -271,7 +271,7 @@ const AUTH = (() => {
       onSuccess(); return;
     }
     overlay.classList.remove('hidden');
-    overlay.style.display = '';
+    overlay.style.display = '';   // inline style="display:none" を解除
 
     const step1     = document.getElementById('loginStep1');
     const step2     = document.getElementById('loginStep2');
